@@ -1,0 +1,292 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ paper['title'] }}{% endblock %}
+
+{% block content %}
+
+<div class="paper-header">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1><i class="fas fa-file-alt me-2"></i>{{ paper['title'] }}</h1>
+        <a href="{{ url_for('room', room_id=paper['room_id']) }}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Room
+        </a>
+    </div>
+    <div class="paper-metadata">
+        <span class="badge bg-primary me-2"><i class="fas fa-user me-1"></i>{{ paper['uploader_name'] }}</span>
+        <span class="badge bg-secondary me-2"><i class="fas fa-calendar me-1"></i>{{ paper['uploaded_at'][:16] }}</span>
+        <span class="badge bg-info"><i class="fas fa-door-open me-1"></i>{{ paper['room_name'] }}</span>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="paperTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="pdf-tab" data-bs-toggle="tab" data-bs-target="#pdf-content" type="button" role="tab">
+                            <i class="fas fa-file-pdf me-1"></i>Paper
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="annotations-tab" data-bs-toggle="tab" data-bs-target="#annotations-content" type="button" role="tab">
+                            <i class="fas fa-highlighter me-1"></i>Annotations <span class="badge bg-secondary">{{ annotations|length }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="questions-tab" data-bs-toggle="tab" data-bs-target="#questions-content" type="button" role="tab">
+                            <i class="fas fa-question-circle me-1"></i>Q&A <span class="badge bg-secondary">{{ questions|length }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes-content" type="button" role="tab">
+                            <i class="fas fa-sticky-note me-1"></i>Notes <span class="badge bg-secondary">{{ notes|length }}</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="paperTabContent">
+                    <!-- PDF Tab -->
+                    <div class="tab-pane fade show active" id="pdf-content" role="tabpanel">
+                        <div id="pdf-container">
+                            <iframe src="{{ url_for('static', filename='papers/' ~ paper['id'] ~ '_' ~ paper['filename']) }}#toolbar=0"
+                                    width="100%" height="600px" style="border:1px solid #ccc;"></iframe>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAnnotationModal">
+                                <i class="fas fa-plus me-2"></i>Add Annotation
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Annotations Tab -->
+                    <div class="tab-pane fade" id="annotations-content" role="tabpanel">
+                        {% if annotations %}
+                        <div class="annotations-container">
+                            {% for annotation in annotations %}
+                            <div class="card mb-3 annotation-card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge bg-primary me-2">Page {{ annotation['page_number'] }}</span>
+                                        <strong>{{ annotation['username'] }}</strong>
+                                    </div>
+                                    <small class="text-muted">{{ annotation['created_at'][:16] }}</small>
+                                </div>
+                                <div class="card-body">
+                                    {{ annotation['content'] }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-info-circle fa-3x mb-3 text-muted"></i>
+                            <p>No annotations have been added to this paper yet.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Questions Tab -->
+                    <div class="tab-pane fade" id="questions-content" role="tabpanel">
+                        <div class="mb-3">
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#askQuestionModal">
+                                <i class="fas fa-question-circle me-2"></i>Ask a Question
+                            </button>
+                        </div>
+                        
+                        {% if questions %}
+                        <div class="questions-container">
+                            {% for question in questions %}
+                            <div class="card mb-3 question-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <a href="{{ url_for('view_question', question_id=question['id']) }}">{{ question['title'] }}</a>
+                                    </h5>
+                                    <p class="card-text text-truncate">{{ question['content'] }}</p>
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <span class="badge bg-primary me-2">
+                                                <i class="fas fa-user me-1"></i>{{ question['username'] }}
+                                            </span>
+                                            <small class="text-muted">{{ question['created_at'][:16] }}</small>
+                                        </div>
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-comment me-1"></i>{{ question['answer_count'] }} answers
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-info-circle fa-3x mb-3 text-muted"></i>
+                            <p>No questions have been asked about this paper yet.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Notes Tab -->
+                    <div class="tab-pane fade" id="notes-content" role="tabpanel">
+                        {% if notes %}
+                        <div class="notes-container">
+                            {% for note in notes %}
+                            <div class="note-card">
+                                <div class="note-header">
+                                    <strong>{{ note['username'] }}</strong>
+                                    <small class="text-muted">{{ note['created_at'][:16] }}</small>
+                                </div>
+                                <div class="note-content">
+                                    {{ note['content'] }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-info-circle fa-3x mb-3 text-muted"></i>
+                            <p>No notes have been added to this paper yet.</p>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mt-3">
+                            <form method="POST" action="{{ url_for('add_note', paper_id=paper['id']) }}">
+                                <div class="mb-3">
+                                    <label for="content" class="form-label">Add Note</label>
+                                    <textarea class="form-control" id="content" name="content" rows="3" required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i>Add Note
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3><i class="fas fa-info-circle me-2"></i>Paper Summary</h3>
+            </div>
+            <div class="card-body">
+                {% if paper['summary'] %}
+                <p>{{ paper['summary'] }}</p>
+                {% else %}
+                <p class="text-muted">Summary not available or still generating...</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-bar me-2"></i>Paper Stats</h3>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Notes:</span>
+                    <span class="badge bg-primary">{{ notes|length }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Annotations:</span>
+                    <span class="badge bg-success">{{ annotations|length }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Questions:</span>
+                    <span class="badge bg-info">{{ questions|length }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Annotation Modal -->
+<div class="modal fade" id="addAnnotationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-highlighter me-2"></i>Add Annotation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_annotation', paper_id=paper['id']) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="page_number" class="form-label">Page Number</label>
+                        <input type="number" class="form-control" id="page_number" name="page_number" min="1" value="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="annotation-content" class="form-label">Annotation</label>
+                        <textarea class="form-control" id="annotation-content" name="content" rows="4" required></textarea>
+                    </div>
+                    <input type="hidden" name="position_data" id="position_data" value="{}">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Annotation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Ask Question Modal -->
+<div class="modal fade" id="askQuestionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-question-circle me-2"></i>Ask a Question</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('ask_question', paper_id=paper['id']) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="question-title" class="form-label">Question Title</label>
+                        <input type="text" class="form-control" id="question-title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="question-content" class="form-label">Details</label>
+                        <textarea class="form-control" id="question-content" name="content" rows="4" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Post Question</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tabs
+        const tabElements = document.querySelectorAll('#paperTabs button');
+        tabElements.forEach(tab => {
+            tab.addEventListener('click', function(event) {
+                event.preventDefault();
+                const tabTarget = this.getAttribute('data-bs-target');
+                
+                // Hide all tab content
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.classList.remove('show', 'active');
+                });
+                
+                // Deactivate all tabs
+                tabElements.forEach(t => {
+                    t.classList.remove('active');
+                });
+                
+                // Activate selected tab and content
+                this.classList.add('active');
+                document.querySelector(tabTarget).classList.add('show', 'active');
+            });
+        });
+    });
+</script>
+{% endblock %}

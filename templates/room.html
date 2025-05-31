@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ room['name'] }}{% endblock %}
+
+{% block content %}
+<div class="room-header">
+    <h1><i class="fas fa-door-open me-2"></i>{{ room['name'] }}</h1>
+    <p class="text-muted">Room ID: {{ room['id'] }}</p>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-file-alt me-2"></i>Research Papers</h3>
+            </div>
+            <div class="card-body">
+                {% if papers %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Uploaded By</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for paper in papers %}
+                            <tr>
+                                <td>{{ paper['title'] }}</td>
+                                <td>{{ paper['uploader_name'] }}</td>
+                                <td>{{ paper['uploaded_at'][:16] }}</td>
+                                <td>
+                                    <a href="{{ url_for('view_paper', paper_id=paper['id']) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-info-circle fa-3x mb-3 text-muted"></i>
+                    <p>No papers have been uploaded to this room yet.</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadPaperModal">
+                    <i class="fas fa-upload me-2"></i>Upload Paper
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-info-circle me-2"></i>Room Info</h3>
+            </div>
+            <div class="card-body">
+                <p><strong>Created:</strong> {{ room['created_at'][:16] }}</p>
+                <div class="room-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ papers|length }}</div>
+                        <div class="stat-label">Papers</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Paper Modal -->
+<div class="modal fade" id="uploadPaperModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-upload me-2"></i>Upload Research Paper</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('upload_paper', room_id=room['id']) }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Paper Title</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="paper" class="form-label">PDF File</label>
+                        <input type="file" class="form-control" id="paper" name="paper" accept=".pdf,.doc,.docx,.txt" required>
+                        <div class="form-text">Supported formats: PDF, DOC, DOCX, TXT</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload Paper</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

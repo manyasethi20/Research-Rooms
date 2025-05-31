@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4"><i class="fas fa-flask"></i> Research Rooms</h1>
+    <p class="lead">A collaborative platform for researchers to share, annotate, and discuss academic papers.</p>
+    <hr class="my-4">
+    <p>Create a new research room or join an existing one to start collaborating.</p>
+    <form method="GET" action="{{ url_for('index') }}" class="mt-3">
+        <div class="input-group">
+            <input type="text" class="form-control" name="q" placeholder="Search rooms..." value="{{ request.args.get('q', '') }}">
+            <button class="btn btn-outline-secondary" type="submit">Search</button>
+        </div>
+    </form>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-door-open me-2"></i>Available Research Rooms</h3>
+            </div>
+            <div class="card-body">
+                {% if rooms %}
+                <div class="row">
+                    {% for room in rooms %}
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card room-card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ room['name'] }}</h5>
+                                <p class="card-text text-muted">
+                                    <small>Created: {{ room['created_at'][:16] }}</small>
+                                </p>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <a href="{{ url_for('room', room_id=room['id']) }}" class="btn btn-success w-100">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Enter Room
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-info-circle fa-3x mb-3 text-muted"></i>
+                    <p class="lead">No research rooms available yet.</p>
+                    <a href="{{ url_for('create_room') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Create the first one
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
